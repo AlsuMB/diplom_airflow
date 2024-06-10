@@ -1,36 +1,34 @@
 from airflow import DAG
-from airflow.operators.python_operator import PythonOperator
+from airflow.providers.apache.spark.operators.spark_submit import SparkSubmitOperator
 from datetime import datetime, timedelta
 
-
-def extract():
-    # Code to extract data
-    pass
-
-
-def transform():
-    # Code to transform data
-    pass
-
-
-def load():
-    # Code to load data into the destination
-    pass
-
-
+# Установите аргументы по умолчанию для DAG
 default_args = {
     'owner': 'airflow',
     'depends_on_past': False,
-    'start_date': datetime(2021, 1, 1),
+    'start_date': datetime(2024, 6, 1),
     'email_on_failure': False,
     'email_on_retry': False,
-    'retries': 1,
     'retry_delay': timedelta(minutes=5),
 }
 
-with DAG('etl_dag', default_args=default_args, schedule_interval=timedelta(days=1)) as dag:
-    t1 = PythonOperator(task_id='extract', python_callable=extract)
-    t2 = PythonOperator(task_id='transform', python_callable=transform)
-    t3 = PythonOperator(task_id='load', python_callable=load)
+# Определите DAG
+dag = DAG(
+    'spark_streaming_dag',
+    default_args=default_args,
+    description='A simple Spark Streaming DAG',
+    schedule_interval=timedelta(days=1),
+)
 
-    t1 >> t2 >> t3
+# Определите задачу SparkSubmitOperator
+spark_submit_task = SparkSubmitOperator(
+    task_id='spark_submit_task',
+    application='sripts/hub_department_script.py',  # Путь к вашему Spark Streaming скрипту
+    conn_id='spark_default',  # Подключение Spark, определенное в Airflow
+    conf={'spark.master': 'spark://localhost:7077'},  # Адрес Spark Master
+    name='spark_streaming_task',
+    dag=dag,
+)
+
+# Установите зависимости задач, если они есть
+spark_submit_task

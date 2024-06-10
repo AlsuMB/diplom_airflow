@@ -37,3 +37,4 @@ if [ $# -gt 0 ]; then
 else
     exec $dc run --rm airflow-cli
 fi
+
